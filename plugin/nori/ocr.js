@@ -39,6 +39,8 @@ export const getLanguages = () => {
     languagesPromise ??= (async () => {
         const configured = readConfig().languages;
         const installed = await listInstalledLanguages();
+        if (installed.length === 0)
+            languagesPromise = null; // try again on the next image
         if (Array.isArray(configured)) {
             const usable = configured.filter(l => installed.includes(l));
             if (usable.length)
@@ -102,7 +104,8 @@ const configDir = () => GLib.build_filenamev([GLib.get_user_config_dir(), 'nori'
 export const readConfig = () => {
     try {
         const [ok, bytes] = GLib.file_get_contents(GLib.build_filenamev([configDir(), 'config.json']));
-        return ok ? JSON.parse(decoder.decode(bytes)) : {};
+        const config = ok ? JSON.parse(decoder.decode(bytes)) : null;
+        return config && typeof config === 'object' && !Array.isArray(config) ? config : {};
     } catch {
         return {};
     }
@@ -146,8 +149,11 @@ export const recognize = async (texture, file, fileInfo, cancellable) => {
         const [bytes] = await cached.load_contents_async(cancellable);
         const text = decoder.decode(bytes);
         const nl = text.indexOf('\n');
-        debug('cache hit', file.get_uri());
-        return {scale: Number(text.slice(0, nl)), tsv: text.slice(nl + 1)};
+        const scale = Number(text.slice(0, nl));
+        if (nl > 0 && Number.isFinite(scale) && scale > 0 && text.startsWith('level\t', nl + 1)) {
+            debug('cache hit', file.get_uri());
+            return {scale, tsv: text.slice(nl + 1)};
+        }
     } catch (e) {
         if (e.matches?.(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
             throw e;
@@ -216,12 +222,12 @@ const encodeForOcr = texture => {
     downloader.set_format(alpha ? Gdk.MemoryFormat.R8G8B8A8 : Gdk.MemoryFormat.R8G8B8);
     const [bytes, stride] = downloader.download_bytes();
     let pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(bytes, GdkPixbuf.Colorspace.RGB, alpha, 8, w, h, stride);
-    const sw = Math.round(w * scale), sh = Math.round(h * scale);
+    const sw = Math.max(1, Math.round(w * scale)), sh = Math.max(1, Math.round(h * scale));
     const interp = scale > 1 ? GdkPixbuf.InterpType.HYPER : GdkPixbuf.InterpType.BILINEAR;
     if (alpha) {
         // Transparent pixels are usually black: put the image on white, or
         // dark text on a transparent background would vanish.
-        pixbuf = pixbuf.composite_color_simple(sw, sh, interp, 255, 1024, 0xffffff, 0xffffff);
+        pixbuf = dropAlpha(pixbuf.composite_color_simple(sw, sh, interp, 255, 1024, 0xffffff, 0xffffff));
     } else if (scale !== 1) {
         pixbuf = pixbuf.scale_simple(sw, sh, interp);
     }
@@ -236,29 +242,26 @@ const hasAlpha = texture => {
     return !name || !OPAQUE_FORMATS.has(name);
 };
 
-/** @param {GdkPixbuf.Pixbuf} pixbuf @returns {GLib.Bytes} */
+/** RGBA -> RGB in C (a JS loop over millions of pixels would stall the UI). */
+const dropAlpha = pixbuf => {
+    const w = pixbuf.get_width(), h = pixbuf.get_height();
+    const texture = Gdk.MemoryTexture.new(w, h, Gdk.MemoryFormat.R8G8B8A8,
+        pixbuf.read_pixel_bytes(), pixbuf.get_rowstride());
+    const downloader = Gdk.TextureDownloader.new(texture);
+    downloader.set_format(Gdk.MemoryFormat.R8G8B8);
+    const [bytes, stride] = downloader.download_bytes();
+    return GdkPixbuf.Pixbuf.new_from_bytes(bytes, GdkPixbuf.Colorspace.RGB, false, 8, w, h, stride);
+};
+
+/** @param {GdkPixbuf.Pixbuf} pixbuf RGB, no alpha @returns {GLib.Bytes} */
 export const toPpm = pixbuf => {
     const w = pixbuf.get_width(), h = pixbuf.get_height();
     const rowstride = pixbuf.get_rowstride();
-    const channels = pixbuf.get_n_channels();
     const src = pixbuf.read_pixel_bytes().toArray();
     const header = encoder.encode(`P6\n${w} ${h}\n255\n`);
     const out = new Uint8Array(header.length + w * h * 3);
     out.set(header);
-    let o = header.length;
-    for (let y = 0; y < h; y++) {
-        const row = y * rowstride;
-        if (channels === 3) {
-            out.set(src.subarray(row, row + w * 3), o);
-            o += w * 3;
-        } else {
-            for (let x = 0; x < w; x++) {
-                const i = row + x * channels;
-                out[o++] = src[i];
-                out[o++] = src[i + 1];
-                out[o++] = src[i + 2];
-            }
-        }
-    }
+    for (let y = 0; y < h; y++)
+        out.set(src.subarray(y * rowstride, y * rowstride + w * 3), header.length + y * w * 3);
     return new GLib.Bytes(out);
 };

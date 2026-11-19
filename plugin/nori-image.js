@@ -8,8 +8,8 @@
 
 import GObject from 'gi://GObject';
 
-let Klass;
-let contentTypes;
+let Klass = null;
+let contentTypes = [];
 
 try {
     const Image = await import('resource:///org/gnome/NautilusPreviewer/js/viewers/image.js');
@@ -26,25 +26,43 @@ try {
             this._noriFileInfo = fileInfo;
         }
 
+        /** @returns {LiveText|null} null if it could not be set up */
         get liveText() {
-            this._liveText ??= new LiveText(this, () => this.cancellable);
+            if (this._liveText === undefined) {
+                try {
+                    this._liveText = new LiveText(this, () => this.cancellable);
+                } catch (e) {
+                    console.error(`[nori] text layer disabled: ${e}`);
+                    this._liveText = null;
+                }
+            }
             return this._liveText;
         }
 
         async _loadFile(file) {
             await super._loadFile(file);
-            if (this._texture)
-                this.liveText.start(this._texture, this._noriFile, this._noriFileInfo);
+            // Sushi turns a rejection into an error page: from here on, a
+            // failure must only cost the text layer, never the image.
+            try {
+                if (this._texture)
+                    this.liveText?.start(this._texture, this._noriFile, this._noriFileInfo);
+            } catch (e) {
+                console.error(`[nori] text recognition not started: ${e}`);
+            }
         }
 
         _handleClick(numClicks) {
-            if (!this.liveText.handleMultiClick(numClicks))
+            if (!this.liveText?.handleMultiClick(numClicks))
                 super._handleClick(numClicks);
         }
 
         vfunc_snapshot(snapshot) {
             super.vfunc_snapshot(snapshot);
-            this._liveText?.snapshot(snapshot);
+            try {
+                this._liveText?.snapshot(snapshot);
+            } catch (e) {
+                console.error(`[nori] drawing failed: ${e}`);
+            }
         }
 
         stop() {
@@ -53,7 +71,7 @@ try {
         }
 
         get toolbar() {
-            return this.liveText.toolbar;
+            return this.liveText?.toolbar ?? null;
         }
     };
     contentTypes = Image.contentTypes;

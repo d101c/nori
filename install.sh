@@ -41,6 +41,7 @@ esac
 if ! sushi_version=$(dpkg-query -W -f='${Version}' gnome-sushi 2>/dev/null || rpm -q --qf '%{VERSION}' sushi 2>/dev/null); then
     sushi_version=unknown
 fi
+sushi_version=${sushi_version#*:} # Debian epoch
 case "$sushi_version" in
 [0-4]* | 50*) echo "Nori needs Sushi 51 or later (found $sushi_version)." >&2; exit 1 ;;
 esac
@@ -60,7 +61,7 @@ echo "Nori installed in $dest."
 if ! command -v tesseract >/dev/null; then
     echo "Tesseract is missing: install it, e.g. 'sudo apt install tesseract-ocr'." >&2
 else
-    langs=$(tesseract --list-langs 2>/dev/null | tail -n +2 | grep -v -x -e osd -e equ | tr '\n' ' ')
+    langs=$(tesseract --list-langs 2>/dev/null | tail -n +2 | { grep -v -x -e osd -e equ || true; } | tr '\n' ' ')
     echo "Text recognition languages: ${langs:-none}"
     echo "More languages: e.g. 'sudo apt install tesseract-ocr-fra tesseract-ocr-deu'."
 fi

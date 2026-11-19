@@ -83,15 +83,20 @@ export class TextLayout {
 
     /** Word whose box contains (x, y), in image pixels. @returns {number} -1 if none */
     wordAt(x, y) {
+        if (!Number.isFinite(x) || !Number.isFinite(y))
+            return -1;
+        let best = null;
         for (const line of this.lines) {
             const b = line.box;
             const slack = b.h * 0.25;
             if (y < b.y - slack || y > b.y + b.h + slack || x < b.x - slack || x > b.x + b.w + slack)
                 continue;
-            // Inside the line band: take the word horizontally closest.
-            return this.#closestInLine(line, x);
+            // Bands of close lines overlap: keep the line whose middle is nearest.
+            const d = Math.abs(y - (b.y + b.h / 2));
+            if (!best || d < best.d)
+                best = {d, line};
         }
-        return -1;
+        return best ? this.#closestInLine(best.line, x) : -1;
     }
 
     /**
@@ -100,7 +105,7 @@ export class TextLayout {
      * @returns {number}
      */
     nearestWord(x, y) {
-        if (this.isEmpty)
+        if (this.isEmpty || !Number.isFinite(x) || !Number.isFinite(y))
             return -1;
         let best = null;
         for (const line of this.lines) {
@@ -186,10 +191,13 @@ export class TextLayout {
     }
 }
 
-const URL_RE = /\b(?:https?:\/\/[^\s<>"]+|www\.[^\s<>"]+\.[^\s<>"]+|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|dev|app|ch|fr|de|it|be|eu|uk|info|gov|edu)(?:\/[^\s<>"]*)?)/giu;
+// Bare domains must end the word: 'report.items' is not report.it.
+const URL_RE = /(?<![\p{L}\p{N}@.-])(?:https?:\/\/[^\s<>"]+|www\.[^\s<>"]+\.[^\s<>"]+|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|dev|app|ch|fr|de|it|be|eu|uk|info|gov|edu)(?![\p{L}\p{N}-])(?:\/[^\s<>"]*)?)/giu;
 const EMAIL_RE = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}/gu;
 // International (+41 22 781 45 90) or national (022 781 45 90, 06 12 34 56 78)
-const PHONE_RE = /(?:\+\d{1,3}[\s.]?)?(?:\(0\)[\s.]?)?\d{2,4}(?:[\s.-]?\d{2,4}){2,4}/g;
+const PHONE_RE = /(?<![\p{N}.,:/-])(?:\+\d{1,3}[\s.]?)?(?:\(0\)[\s.]?)?\d{2,4}(?:[\s.-]?\d{2,4}){2,4}(?![\p{N}:,/])/gu;
+// 01.12.2024, 05-11-24: a date, possibly followed by a time or another number
+const DATE_START_RE = /^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/;
 
 /** Strip trailing punctuation that OCR glues to URLs and e-mails. */
 const trimTail = s => s.replace(/[.,;:!?)\]}'"»]+$/u, '');
@@ -241,7 +249,8 @@ const detect = layout => {
             const digits = m[0].replace(/\D/g, '');
             // Avoid dates, prices and reference numbers: real numbers have 9-15 digits
             // and are written with separators or a leading + / 0.
-            if (digits.length < 9 || digits.length > 15 || !/^[+0(]/.test(m[0]) || !/[\s.-]/.test(m[0]))
+            if (digits.length < 9 || digits.length > 15 || !/^[+0(]/.test(m[0]) ||
+                !/[\s.-]/.test(m[0]) || DATE_START_RE.test(m[0]))
                 continue;
             push('phone', m[0].trim(), m.index, m[0].trimEnd().length);
         }

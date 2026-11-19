@@ -48,6 +48,8 @@ export class LiveText {
     #showButton = null;
     #copyButton = null;
     #copyResetTimeout = 0;
+    #popover = null;
+    #stopped = false;
 
     /**
      * @param {Gtk.Picture} host the image renderer
@@ -76,7 +78,7 @@ export class LiveText {
 
     /** Called once the first frame is on screen. */
     start(texture, file, fileInfo) {
-        if (readConfig().enabled === false)
+        if (this.#stopped || this.#startTimeout || readConfig().enabled === false)
             return;
         this.#startTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, START_DELAY_MS, () => {
             this.#startTimeout = 0;
@@ -86,6 +88,8 @@ export class LiveText {
     }
 
     stop() {
+        this.#stopped = true;
+        this.#closeMenu();
         if (this.#startTimeout) {
             GLib.source_remove(this.#startTimeout);
             this.#startTimeout = 0;
@@ -284,7 +288,10 @@ export class LiveText {
         add('open-uri', uri => this.#launch(uri), new GLib.VariantType('s'));
         add('toggle-show-all', () => this.#setShowAll(!this.#showAll));
         this.host.insert_action_group('nori', group);
+        this.#actions = group;
     }
+
+    #actions = null;
 
     #popupMenu(x, y, id) {
         const menu = new Gio.Menu();
@@ -311,6 +318,7 @@ export class LiveText {
         edit.append(_('Copy All Text'), 'nori.copy-all');
         menu.append_section(null, edit);
 
+        this.#closeMenu();
         const popover = Gtk.PopoverMenu.new_from_model(menu);
         popover.set_parent(this.host);
         popover.set_has_arrow(false);
@@ -318,10 +326,21 @@ export class LiveText {
         const rect = new Gdk.Rectangle({x: Math.round(x), y: Math.round(y), width: 1, height: 1});
         popover.set_pointing_to(rect);
         popover.connect('closed', () => GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            popover.unparent();
+            if (this.#popover === popover)
+                this.#closeMenu();
             return GLib.SOURCE_REMOVE;
         }));
+        this.#popover = popover;
         popover.popup();
+    }
+
+    #closeMenu() {
+        const popover = this.#popover;
+        this.#popover = null;
+        if (popover?.get_parent()) {
+            popover.popdown();
+            popover.unparent();
+        }
     }
 
     #copy(text, fromButton = false) {
@@ -381,6 +400,8 @@ export class LiveText {
             visible: false,
             css_classes: ['osd', 'pill-osd'],
         });
+        // The toolbar is not inside the picture: give it the actions too.
+        this.#toolbar.insert_action_group('nori', this.#actions);
         this.#toolbar.append(this.#showButton);
         this.#toolbar.append(this.#copyButton);
     }

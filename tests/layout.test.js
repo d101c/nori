@@ -126,6 +126,29 @@ test('not phone numbers: dates, prices, references', () => {
     }
 });
 
+test('review cases: words that contain a domain-like suffix are not links', () => {
+    for (const text of ['see report.items now', 'Para.information', 'example.community', 'file.developer', 'Mr.Dean']) {
+        const layout = TextLayout.fromTsv(tsv(text.split(' ').map((w, i) => [w, i * 80, 0, 70, 10, 1])));
+        ok(!layout.detections.some(d => d.kind === 'url'), `${text} -> ${JSON.stringify(kinds(layout))}`);
+    }
+    const ok1 = TextLayout.fromTsv(tsv([['visit', 0, 0, 40, 10, 1], ['example.com.', 50, 0, 90, 10, 1]]));
+    eq(kinds(ok1), [['url', 'https://example.com']]);
+});
+
+test('review cases: dates followed by a time are not phone numbers', () => {
+    for (const text of ['01.12.2024 08:30', '05.11.24 12 30', 'le 19.11.2026 14 h', '00-1234-5678/9']) {
+        const layout = TextLayout.fromTsv(tsv(text.split(' ').map((w, i) => [w, i * 80, 0, 70, 10, 1])));
+        ok(!layout.detections.some(d => d.kind === 'phone'), `${text} -> ${JSON.stringify(kinds(layout))}`);
+    }
+});
+
+test('review cases: NaN coordinates and overlapping line bands', () => {
+    const layout = TextLayout.fromTsv(tsv([['up', 0, 0, 40, 20, 1], ['down', 0, 22, 40, 20, 2]]));
+    eq(layout.wordAt(NaN, NaN), -1);
+    eq(layout.nearestWord(NaN, 5), -1);
+    eq(layout.wordAt(10, 24), 1, 'y=24 is in both bands but closer to line 2');
+});
+
 test('default languages: session language plus English', () => {
     eq(pickDefaultLanguages(['eng', 'osd'], ['en_US.UTF-8', 'en_US', 'en', 'C']), ['eng']);
     eq(pickDefaultLanguages(['eng', 'fra', 'osd'], ['en_US', 'en', 'C']), ['eng', 'fra']);
