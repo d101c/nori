@@ -1,7 +1,7 @@
 // Run with: gjs -m tests/pdf.test.js  (needs tesseract + fra, poppler-utils, qpdf)
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import {findScannedPages, makeSearchable} from '../plugin/nori/pdfText.js';
+import {findScannedPages, makeSearchable, nextPage, PdfTextJob} from '../plugin/nori/pdfText.js';
 
 const here = GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]);
 const fixture = name => Gio.File.new_for_path(GLib.build_filenamev([here, 'fixtures', name]));
@@ -91,6 +91,66 @@ await test('cancelling stops the work', async () => {
         threw = true;
     }
     ok(threw, 'expected an error after cancellation');
+});
+
+await test('reading order: nearest to the page on screen, forward first', () => {
+    const order = (pending, focus) => {
+        const left = new Set(pending), out = [];
+        while (left.size) {
+            const p = nextPage(left, focus);
+            out.push(p);
+            left.delete(p);
+        }
+        return out.join(',');
+    };
+    ok(order([1, 2, 3, 4, 5], 1) === '1,2,3,4,5', order([1, 2, 3, 4, 5], 1));
+    ok(order([1, 2, 3, 4, 5, 6, 7], 4) === '4,5,6,3,7,2,1', order([1, 2, 3, 4, 5, 6, 7], 4));
+    ok(order([2, 9], 8) === '9,2', 'skips to the nearest pending page');
+});
+
+/** A long scan: `copies` times scan.pdf (2 pages each). */
+const longScan = copies => {
+    const dir = GLib.Dir.make_tmp('nori-test-XXXXXX');
+    const path = GLib.build_filenamev([dir, 'long.pdf']);
+    const src = fixture('scan.pdf').get_path();
+    Gio.Subprocess.new(['qpdf', '--empty', '--pages', ...Array(copies).fill(src), '--', path],
+        Gio.SubprocessFlags.NONE).wait_check(null);
+    return Gio.File.new_for_path(path);
+};
+
+await test('long scan: focus moves mid-way, partial copy, resume after closing', async () => {
+    const file = longScan(10); // 20 pages
+    const job = new PdfTextJob(file, info(file));
+    ok(await job.prepare(new Gio.Cancellable()), 'prepare');
+    ok(job.pages.length === 20, `${job.pages.length} pages`);
+    job.focus = 15;
+    const cancellable = new Gio.Cancellable();
+    const seen = [];
+    const run = job.run(cancellable, page => {
+        seen.push(page);
+        if (seen.length === 4)
+            cancellable.cancel(); // the preview closes
+    });
+    await run.catch(() => {});
+    // Three pages are read in parallel, so completion order varies a little.
+    ok(seen.every(p => p >= 14 && p <= 18), `first pages read: ${seen}`);
+    const partial = await job.build(new Gio.Cancellable());
+    ok(partial.get_basename().startsWith('partial-'), partial.get_basename());
+    ok(pdftotext(partial, 15).includes('Genève'), 'page 15 has text');
+    ok(pdftotext(partial, 1).trim() === '', 'page 1 not read yet');
+    job.dispose();
+
+    // Next preview: the pages already read come from the cache.
+    const again = new PdfTextJob(file, info(file));
+    await again.prepare(new Gio.Cancellable());
+    ok(again.done.size >= 4, `resumed with ${again.done.size} pages`);
+    const read = [];
+    await again.run(new Gio.Cancellable(), p => read.push(p));
+    ok(!read.some(p => seen.includes(p)), `re-read cached pages: ${read.filter(p => seen.includes(p))}`);
+    const complete = await again.build(new Gio.Cancellable());
+    ok(complete.get_basename() === 'complete.pdf', complete.get_basename());
+    ok(pdftotext(complete, 1).includes('Genève') && pdftotext(complete, 20).includes('portal.example.org'), 'all pages');
+    again.dispose();
 });
 
 print(`\n${count - failures}/${count} passed`);

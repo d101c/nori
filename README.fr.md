@@ -32,7 +32,10 @@ pendant qu’un indicateur tourne dans la barre des pages. Nori pose ensuite
 une couche de texte invisible sur ces pages et recharge l’aperçu à la même
 page : la sélection, le double-clic et <kbd>Ctrl</kbd>+<kbd>C</kbd> de
 l’aperçu PDF marchent alors sur le scan. Le fichier d’origine n’est jamais
-modifié. Seules les 30 premières pages scannées sont lues.
+modifié. Les longs scans sont lus à partir de la page affichée, en suivant
+le lecteur ; l’aperçu se recharge dès que cette page a son texte, sans
+perdre la position ni interrompre une sélection, et une fermeture puis une
+réouverture reprennent là où la lecture s’était arrêtée (jusqu’à 200 pages).
 
 ## Installation
 

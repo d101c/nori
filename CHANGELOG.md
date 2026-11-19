@@ -7,6 +7,12 @@
   at the same page so Sushi's PDF selection and Ctrl+C work on scans. Mixed
   documents keep their real text; rotated pages are handled; the original
   file is never modified. Progress spinner in the page bar.
+- Long scans: pages are read nearest-first from the page on screen and
+  follow the reader; the preview reloads in steps (as soon as the visible
+  page is ready, at most every 4 s, never during a selection, keeping the
+  scroll position) and once at the end; pages are cached one by one so a
+  later preview resumes; up to 200 pages; cache capped at 500 MB.
+- qpdf always works in /tmp, whatever TMPDIR says (AppArmor).
 
 ## 0.1 — unreleased
 

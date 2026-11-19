@@ -38,8 +38,15 @@ background too; a spinner turns in the page bar meanwhile. Nori then lays an
 invisible text layer over those pages, as OCRmyPDF does, and the preview
 reloads at the same page: Sushi's own PDF selection, double-click and
 <kbd>Ctrl</kbd>+<kbd>C</kbd> work on the scan. The original file is never
-modified; the copy with text lives in `~/.cache/nori/pdf/`. Pages that already
-have text are left alone. Only the first 30 scanned pages are read
+modified; the copy with text lives in `~/.cache/nori/pdf/` (500 MB at most,
+least recently used first). Pages that already have text are left alone.
+
+Long scans are read from the page on screen outwards, following you as you
+move through the document. The preview reloads as soon as the page you are
+looking at has its text (at most every 4 seconds, never while you are
+selecting, keeping your scroll position), then once more at the end. Pages
+read are cached one by one, so closing the preview and opening it again
+resumes where it stopped. Up to 200 scanned pages are read
 (`"maxPdfPages"` in the settings); `"pdf": false` turns this off.
 
 ## Install
@@ -62,7 +69,7 @@ to this checkout instead of copying it.
 Optional, in `~/.config/nori/config.json`:
 
 ```json
-{"languages": ["fra", "eng"], "enabled": true, "pdf": true, "maxPdfPages": 30}
+{"languages": ["fra", "eng"], "enabled": true, "pdf": true, "maxPdfPages": 200}
 ```
 
 Without `languages`, Nori uses your session language plus English, and every
@@ -92,8 +99,9 @@ temporary folder. Sushi's PDF viewer is built from a GtkBuilder template that
 GJS cannot subclass, so Nori wraps it rather than extending it.
 
 Measured on an Intel i7-8565U (no GPU): 0.3 s for a dark-mode screenshot,
-0.5 s for a scanned letter, 1.4 s for a 12-megapixel photo, 2 s for an
-8-page scanned PDF.
+0.5 s for a scanned letter, 1.4 s for a 12-megapixel photo; a 40-page
+scanned PDF has text on the page on screen after about 2 s and on every page
+after about 16 s.
 
 ## Development
 
@@ -103,6 +111,7 @@ tools/sandbox.sh start     # a throwaway Sushi in a browser (GTK Broadway),
 tools/sandbox.sh show F    # on a private D-Bus, with this checkout as plugin
 NORI_DEBUG=1 ...           # log timings, selections and copies
 gjs -m tools/render.js IMAGE OUT.png show-all   # render to PNG
+gjs -m tools/pdf-drive.js SCAN.pdf 30 1500      # PDF preview, jump to page 30 after 1.5 s
 ```
 
 Translations live in `po/`; `install.sh` compiles them.

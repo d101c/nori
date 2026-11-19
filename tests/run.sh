@@ -26,6 +26,11 @@ fi
 
 if command -v pdftoppm >/dev/null && command -v qpdf >/dev/null; then
     XDG_CACHE_HOME="$out/pdf-cache" gjs -m tests/pdf.test.js
+    # A 12-page scan, jumping to page 9 while it is being read.
+    pages=(); for _ in $(seq 6); do pages+=(tests/fixtures/scan.pdf); done
+    qpdf --empty --pages "${pages[@]}" -- "$out/long.pdf"
+    printf 'e2e long PDF, jump to page 9: '
+    XDG_CACHE_HOME="$out/drive-cache" gjs -m tools/pdf-drive.js "$out/long.pdf" 9 800 2>/dev/null | tail -1
 else
     echo "skipping PDF tests (needs poppler-utils and qpdf)"
 fi
