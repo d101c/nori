@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nori\n"
 "Report-Msgid-Bugs-To: https://github.com/d101c/nori/issues\n"
-"POT-Creation-Date: 2026-11-19 15:13+0100\n"
+"POT-Creation-Date: 2026-11-19 16:09+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,39 +17,45 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: plugin/nori/liveText.js:293
+#: plugin/nori/liveText.js:303
 msgid "Open Link"
 msgstr ""
 
-#: plugin/nori/liveText.js:294
+#: plugin/nori/liveText.js:304
 msgid "Copy Link"
 msgstr ""
 
-#: plugin/nori/liveText.js:296
+#: plugin/nori/liveText.js:306
 msgid "Send Email"
 msgstr ""
 
-#: plugin/nori/liveText.js:298
+#: plugin/nori/liveText.js:308
 msgid "Copy Email Address"
 msgstr ""
 
-#: plugin/nori/liveText.js:300
+#: plugin/nori/liveText.js:310
 msgid "Copy Phone Number"
 msgstr ""
 
-#: plugin/nori/liveText.js:306
+#: plugin/nori/liveText.js:316
 msgid "Copy"
 msgstr ""
 
-#: plugin/nori/liveText.js:307
+#: plugin/nori/liveText.js:317
 msgid "Select All Text"
 msgstr ""
 
-#: plugin/nori/liveText.js:308 plugin/nori/liveText.js:367
-#: plugin/nori/liveText.js:371
+#: plugin/nori/liveText.js:318 plugin/nori/liveText.js:389
+#: plugin/nori/liveText.js:393
 msgid "Copy All Text"
 msgstr ""
 
-#: plugin/nori/liveText.js:358 plugin/nori/liveText.js:371
+#: plugin/nori/liveText.js:380 plugin/nori/liveText.js:393
 msgid "Show Text"
+msgstr ""
+
+#. Translators: progress while reading a scanned PDF, e.g. "2 of 5 pages"
+#: plugin/nori-pdf.js:97
+#, javascript-format
+msgid "Recognizing text: %d of %d pages"
 msgstr ""

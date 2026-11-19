@@ -31,15 +31,28 @@ outside text still toggles full screen.
 
 ![A selection across three lines](docs/selection.png)
 
+### Scanned PDFs
+
+PDF pages without text (scans, photos turned into PDFs) are read in the
+background too; a spinner turns in the page bar meanwhile. Nori then lays an
+invisible text layer over those pages, as OCRmyPDF does, and the preview
+reloads at the same page: Sushi's own PDF selection, double-click and
+<kbd>Ctrl</kbd>+<kbd>C</kbd> work on the scan. The original file is never
+modified; the copy with text lives in `~/.cache/nori/pdf/`. Pages that already
+have text are left alone. Only the first 30 scanned pages are read
+(`"maxPdfPages"` in the settings); `"pdf": false` turns this off.
+
 ## Install
 
 Needs Sushi 51 or later (GNOME 51) and Tesseract with the languages you read:
 
 ```sh
-sudo apt install tesseract-ocr tesseract-ocr-fra   # Debian, Ubuntu
-sudo dnf install tesseract tesseract-langpack-fra  # Fedora
+sudo apt install tesseract-ocr tesseract-ocr-fra poppler-utils qpdf   # Debian, Ubuntu
+sudo dnf install tesseract tesseract-langpack-fra poppler-utils qpdf  # Fedora
 ./install.sh
 ```
+
+`poppler-utils` and `qpdf` are only needed for scanned PDFs.
 
 `./install.sh --uninstall` removes it. `./install.sh --dev` links the plugin
 to this checkout instead of copying it.
@@ -49,7 +62,7 @@ to this checkout instead of copying it.
 Optional, in `~/.config/nori/config.json`:
 
 ```json
-{"languages": ["fra", "eng"], "enabled": true}
+{"languages": ["fra", "eng"], "enabled": true, "pdf": true, "maxPdfPages": 30}
 ```
 
 Without `languages`, Nori uses your session language plus English, and every
@@ -70,8 +83,17 @@ recognition down).
    previewing the same image again is instant. Moving to another file cancels
    recognition.
 
+For PDFs: `pdftotext` finds the pages without text; each one is rendered at
+300 dpi (`pdftoppm`) and read by Tesseract as a text-only PDF page, three
+pages at a time; `qpdf --overlay` lays them over the original pages (rotation
+and page boxes included). Ubuntu confines qpdf with AppArmor to `*.pdf` files
+in `/tmp` or non-hidden home folders, so this happens on copies in a
+temporary folder. Sushi's PDF viewer is built from a GtkBuilder template that
+GJS cannot subclass, so Nori wraps it rather than extending it.
+
 Measured on an Intel i7-8565U (no GPU): 0.3 s for a dark-mode screenshot,
-0.5 s for a scanned letter, 1.4 s for a 12-megapixel photo.
+0.5 s for a scanned letter, 1.4 s for a 12-megapixel photo, 2 s for an
+8-page scanned PDF.
 
 ## Development
 

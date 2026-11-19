@@ -29,7 +29,7 @@ restart_previewer() {
 
 case "${1:-}" in
 --uninstall)
-    rm -rf "$dest/nori" "$dest/nori-image.js"
+    rm -rf "$dest/nori" "$dest"/nori-*.js
     restart_previewer
     echo "Nori removed."
     exit 0
@@ -48,12 +48,12 @@ esac
 
 command -v msgfmt >/dev/null && build_translations
 mkdir -p "$dest"
-rm -rf "$dest/nori" "$dest/nori-image.js"
+rm -rf "$dest/nori" "$dest"/nori-*.js
 if [ "${1:-}" = --dev ]; then
     ln -s "$here/plugin/nori" "$dest/nori"
-    ln -s "$here/plugin/nori-image.js" "$dest/nori-image.js"
+    for f in "$here"/plugin/nori-*.js; do ln -s "$f" "$dest/"; done
 else
-    cp -r "$here/plugin/nori" "$here/plugin/nori-image.js" "$dest/"
+    cp -r "$here/plugin/nori" "$here"/plugin/nori-*.js "$dest/"
 fi
 restart_previewer
 echo "Nori installed in $dest."
@@ -64,4 +64,9 @@ else
     langs=$(tesseract --list-langs 2>/dev/null | tail -n +2 | { grep -v -x -e osd -e equ || true; } | tr '\n' ' ')
     echo "Text recognition languages: ${langs:-none}"
     echo "More languages: e.g. 'sudo apt install tesseract-ocr-fra tesseract-ocr-deu'."
+fi
+missing=""
+for tool in pdftoppm pdftotext qpdf; do command -v "$tool" >/dev/null || missing="$missing $tool"; done
+if [ -n "$missing" ]; then
+    echo "Scanned PDFs need:$missing (e.g. 'sudo apt install poppler-utils qpdf')." >&2
 fi

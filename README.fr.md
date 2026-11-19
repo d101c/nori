@@ -25,12 +25,21 @@ plugins depuis `~/.local/share/sushi/plugins-1/`.
 | Clic sur un lien, une adresse, un numéro | les mêmes actions |
 | Boutons en bas à droite (au survol) | **Afficher le texte** assombrit l’image et fait ressortir chaque ligne ; **Copier tout le texte** |
 
+### PDF scannés
+
+Les pages de PDF sans texte (scans) sont lues elles aussi en arrière-plan,
+pendant qu’un indicateur tourne dans la barre des pages. Nori pose ensuite
+une couche de texte invisible sur ces pages et recharge l’aperçu à la même
+page : la sélection, le double-clic et <kbd>Ctrl</kbd>+<kbd>C</kbd> de
+l’aperçu PDF marchent alors sur le scan. Le fichier d’origine n’est jamais
+modifié. Seules les 30 premières pages scannées sont lues.
+
 ## Installation
 
 Il faut Sushi 51 ou plus récent (GNOME 51) et Tesseract avec les langues voulues :
 
 ```sh
-sudo apt install tesseract-ocr tesseract-ocr-fra
+sudo apt install tesseract-ocr tesseract-ocr-fra poppler-utils qpdf
 ./install.sh
 ```
 

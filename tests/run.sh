@@ -23,3 +23,9 @@ printf 'e2e %-7s ' notext
 if gjs -m tools/render.js tests/fixtures/notext.png "$out/notext.png" 2>/dev/null | head -1; then
     echo "FAIL: text found in an image without text"; exit 1
 fi
+
+if command -v pdftoppm >/dev/null && command -v qpdf >/dev/null; then
+    XDG_CACHE_HOME="$out/pdf-cache" gjs -m tests/pdf.test.js
+else
+    echo "skipping PDF tests (needs poppler-utils and qpdf)"
+fi

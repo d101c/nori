@@ -35,3 +35,7 @@ msgstr "Copier tout le texte"
 
 msgid "Show Text"
 msgstr "Afficher le texte"
+
+#. Translators: progress while reading a scanned PDF, e.g. "2 of 5 pages"
+msgid "Recognizing text: %d of %d pages"
+msgstr "Lecture du texte : %d pages sur %d"

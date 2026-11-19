@@ -41,3 +41,14 @@ for f in letter dark photo notext; do
             -c tessedit_create_tsv=1 -c tessedit_create_txt=0 2>/dev/null >"$f.x2.tsv"
 done
 rm -f letter.tsv dark.tsv photo.tsv notext.tsv
+
+# PDFs: two scanned pages (one rotated), and a mixed file whose first page
+# has real text and whose second page is a scan.
+magick letter.png -density 100 -units PixelsPerInch png:- > scan-letter.png
+mutool convert -o scan.pdf scan-letter.png dark.png
+qpdf scan.pdf --rotate=+90:2 -- scan-rotated.pdf
+mv scan-rotated.pdf scan.pdf
+printf 'This page has real text, so it must not be read again.\nSecond line of real text.\n' > text.txt
+pango-view --no-display --font="Cantarell 14" -o text-page.pdf text.txt
+qpdf --empty --pages text-page.pdf scan.pdf 1 -- mixed.pdf
+rm -f scan-letter.png text.txt text-page.pdf
