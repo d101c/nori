@@ -1,0 +1,55 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the nori package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: nori\n"
+"Report-Msgid-Bugs-To: https://github.com/d101c/nori/issues\n"
+"POT-Creation-Date: 2026-11-19 15:13+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: plugin/nori/liveText.js:293
+msgid "Open Link"
+msgstr ""
+
+#: plugin/nori/liveText.js:294
+msgid "Copy Link"
+msgstr ""
+
+#: plugin/nori/liveText.js:296
+msgid "Send Email"
+msgstr ""
+
+#: plugin/nori/liveText.js:298
+msgid "Copy Email Address"
+msgstr ""
+
+#: plugin/nori/liveText.js:300
+msgid "Copy Phone Number"
+msgstr ""
+
+#: plugin/nori/liveText.js:306
+msgid "Copy"
+msgstr ""
+
+#: plugin/nori/liveText.js:307
+msgid "Select All Text"
+msgstr ""
+
+#: plugin/nori/liveText.js:308 plugin/nori/liveText.js:367
+#: plugin/nori/liveText.js:371
+msgid "Copy All Text"
+msgstr ""
+
+#: plugin/nori/liveText.js:358 plugin/nori/liveText.js:371
+msgid "Show Text"
+msgstr ""
