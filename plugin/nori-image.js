@@ -2,9 +2,11 @@
 //
 // Nori: Sushi plugin that makes the text in previewed images selectable.
 //
-// It extends Sushi's own image renderer, so loading, animation and sizing stay
-// exactly as upstream. If anything here fails to load, the module exports no
-// content types and Sushi keeps using its built-in renderer.
+// It extends a copy of Sushi's image viewer (nori/vendor/image.js), as Sushi's
+// maintainers recommend (sushi#179), so loading, animation and sizing behave
+// like upstream while Nori only depends on the stable plugin API. If anything
+// here fails to load, the module exports no content types and Sushi keeps
+// using its built-in viewer.
 
 import GObject from 'gi://GObject';
 
@@ -12,7 +14,7 @@ let Klass = null;
 let contentTypes = [];
 
 try {
-    const Image = await import('resource:///org/gnome/NautilusPreviewer/js/viewers/image.js');
+    const Image = await import('./nori/vendor/image.js');
     const {LiveText} = await import('./nori/liveText.js');
 
     Klass = class NoriImageRenderer extends Image.Klass {

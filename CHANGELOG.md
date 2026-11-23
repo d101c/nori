@@ -13,6 +13,10 @@
   scroll position) and once at the end; pages are cached one by one so a
   later preview resumes; up to 200 pages; cache capped at 500 MB.
 - qpdf always works in /tmp, whatever TMPDIR says (AppArmor).
+- Nori now ships its own copies of Sushi's image and PDF viewers
+  (`plugin/nori/vendor/`), as Sushi's maintainers suggested (sushi#179), and
+  only imports Sushi's stable `plugin-api-1.js`: upstream changes to the
+  built-in viewers (such as sushi#177) no longer break it.
 
 ## 0.1 — unreleased
 

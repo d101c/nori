@@ -12,8 +12,10 @@ nothing is sent anywhere.
 
 Nori is a plugin for **Sushi**, the previewer that Files opens on
 <kbd>Space</kbd>, not a GNOME Shell extension: Sushi 51 loads plugins from
-`~/.local/share/sushi/plugins-1/`. Nori extends Sushi's own image viewer, so
-images load, animate and resize exactly as before.
+`~/.local/share/sushi/plugins-1/`. Nori carries its own copies of Sushi's
+image and PDF viewers (in `plugin/nori/vendor/`, as Sushi's maintainers
+recommend) and only relies on Sushi's stable plugin API, so images and PDFs
+load, animate and resize as before.
 
 ## Using it
 
@@ -96,7 +98,7 @@ pages at a time; `qpdf --overlay` lays them over the original pages (rotation
 and page boxes included). Ubuntu confines qpdf with AppArmor to `*.pdf` files
 in `/tmp` or non-hidden home folders, so this happens on copies in a
 temporary folder. Sushi's PDF viewer is built from a GtkBuilder template that
-GJS cannot subclass, so Nori wraps it rather than extending it.
+GJS cannot subclass, so Nori wraps its copy of it rather than extending it.
 
 Measured on an Intel i7-8565U (no GPU): 0.3 s for a dark-mode screenshot,
 0.5 s for a scanned letter, 1.4 s for a 12-megapixel photo; a 40-page

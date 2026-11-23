@@ -9,9 +9,10 @@
 // its text (at most every few seconds, never during a selection, keeping
 // the scroll position), and once more at the end.
 //
-// Sushi's PDF viewer is built from a GtkBuilder template, which GJS does not
-// let us subclass, so this wraps it instead. If anything fails to load, the
-// module exports no content types and Sushi keeps its own PDF viewer.
+// The PDF view is a copy of Sushi's (nori/vendor/pdf.js, see sushi#179). It is
+// built from a GtkBuilder template, which GJS does not let us subclass, so
+// this wraps it. If anything fails to load, the module exports no content
+// types and Sushi keeps its own PDF viewer.
 
 import Adw from 'gi://Adw';
 import GLib from 'gi://GLib';
@@ -28,7 +29,7 @@ const MIN_RELOAD_INTERVAL_MS = 4000;
 
 try {
     const {Renderer} = await import('resource:///org/gnome/NautilusPreviewer/plugin-api-1.js');
-    const Pdf = await import('resource:///org/gnome/NautilusPreviewer/js/viewers/pdf.js');
+    const Pdf = await import('./nori/vendor/pdf.js');
     const {_} = await import('./nori/i18n.js');
     const {debug} = await import('./nori/ocr.js');
     const {PdfTextJob, MissingToolError} = await import('./nori/pdfText.js');
@@ -238,8 +239,7 @@ try {
             this._spinner = null;
         }
     };
-    if (Pdf.contentTypes.includes(PDF))
-        contentTypes = [PDF];
+    contentTypes = [PDF];
 } catch (e) {
     console.error(`[nori] PDF support disabled, falling back to Sushi's viewer: ${e}`);
 }
